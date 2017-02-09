@@ -3,6 +3,7 @@
 
 #include <QtWidgets/QMainWindow>
 #include "ui_mainwindow.h"
+#include "gridWidget.h"
 
 class MainWindow : public QMainWindow
 {
@@ -14,6 +15,10 @@ public:
 
 private:
 	Ui::MainWindowClass ui;
+	GridWidget* m_gridWidget;
+private slots:
+	void setCircleButtonState(bool);
+	void setSquareButtonState(bool);
 };
 
 #endif // MAINWINDOW_H
