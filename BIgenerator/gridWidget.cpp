@@ -5,6 +5,10 @@ GridWidget::GridWidget(QWidget *parent)
 {
 	setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 	m_resolution = 20;
+	m_isCircleButtonChecked = false;
+	m_isSquareButtonChecked = false;
+	setMouseTracking(true);
+	currentState = idle;
 }
 
 
@@ -15,14 +19,140 @@ GridWidget::~GridWidget()
 void GridWidget::paintEvent(QPaintEvent *)
 {
 	QPainter p(this);
+
 	paintBorders(p);
 	paintGrid(p);
+
+	if (m_figures.size() != 0)
+	{
+		paintSavedFigures(p);
+	}
+	if (currentState == drawingFigure)
+	{
+		paintCurrentFigure(p);
+	}
+	if (m_resultingImage.size() != 0)
+	{
+		paintBinarizedFigures(p);
+	}
 }
+
+void GridWidget::paintGrid(QPainter & painter)
+{
+	QColor gridColor(Qt::black);
+	gridColor.setAlpha(10);
+	painter.setPen(gridColor);
+	double cellSize = double(this->width()) / m_resolution;
+	for (double i = cellSize; i <= width(); i += cellSize)
+	{
+		painter.drawLine(0, i, height(), i);
+	}
+	for (double i = cellSize; i <= width(); i += cellSize)
+	{
+		painter.drawLine(i, 0, i, height());
+	}
+
+}
+
+void GridWidget::paintBorders(QPainter & painter)
+{
+	QColor gridColor(Qt::black);
+	painter.setPen(gridColor);
+	QRect borders(0, 0, width() - 1, height() - 1);
+	painter.drawRect(borders);
+}
+
+void GridWidget::paintSavedFigures(QPainter & painter)
+{
+	QColor gridColor(Qt::red);
+	painter.setPen(gridColor);
+	painter.setBrush(gridColor);
+	for (auto figure : m_figures)
+	{
+		if (figure.figure_type == Figure::circle)
+			painter.drawEllipse(figure.figure_rectangle);
+		if (figure.figure_type == Figure::rectangle)
+			painter.drawRect(figure.figure_rectangle);
+
+	}
+}
+
+void GridWidget::paintCurrentFigure(QPainter & p)
+{
+	QColor gridColor(Qt::red);
+	p.setPen(gridColor);
+	p.setBrush(gridColor);
+	if (m_isCircleButtonChecked)
+	{
+		p.drawEllipse(QRect(m_startingPoint, m_mouseCoordinates));
+	}
+	else if (m_isSquareButtonChecked)
+	{
+		p.drawRect(QRect(m_startingPoint, m_mouseCoordinates));
+	}
+
+}
+
+void GridWidget::paintBinarizedFigures(QPainter & painter)
+{
+
+		double cellWidth = (double)width() / m_resolution;
+		double cellHeight = (double)height() / m_resolution;
+		for (int i = 1; i <= m_resolution; i++) {
+			for (int j = 1; j <= m_resolution; j++) {
+				if (m_resultingImage[i-1][j-1] == 1) { // if there is any sense to paint it
+					qreal left = (qreal)(cellWidth*j - cellWidth); // margin from left
+					qreal top = (qreal)(cellHeight*i - cellHeight); // margin from top
+					QRectF r(left, top, (qreal)cellWidth, (qreal)cellHeight);
+					painter.fillRect(r, QBrush(Qt::red)); // fill cell with brush of main color
+				}
+			}
+		}
+	
+}
+
+void GridWidget::mouseMoveEvent(QMouseEvent *event)
+{
+	m_mouseCoordinates = mapFromGlobal(QCursor::pos());
+	update();
+}
+
+void GridWidget::mousePressEvent(QMouseEvent * event)
+{
+	if (event->button() == Qt::RightButton)
+	{
+		currentState = idle;
+		return;
+	}
+
+	if (currentState == drawingFigure)
+	{
+		if (m_isCircleButtonChecked)
+			m_figures.push_back(Figure(Figure::type::circle, QRect(m_startingPoint, m_mouseCoordinates)));
+		else if (m_isSquareButtonChecked)
+			m_figures.push_back(Figure(Figure::type::rectangle, QRect(m_startingPoint, m_mouseCoordinates)));
+		currentState = idle;
+		return;
+	}
+
+	if ((m_isCircleButtonChecked || m_isSquareButtonChecked)) 
+	{
+		if (currentState == idle)
+		{
+			m_startingPoint = mapFromGlobal(QCursor::pos());
+			currentState = drawingFigure;
+		}
+	}
+
+}
+
+
 
 void GridWidget::squareButtonChecked(bool isChecked)
 {
 	m_isSquareButtonChecked = isChecked;
 }
+
 void GridWidget::circleButtonChecked(bool isChecked)
 {
 	m_isCircleButtonChecked = isChecked;
@@ -39,30 +169,52 @@ QSize GridWidget::sizeHint() const
 	return QSize(600, 600);
 }
 
-void GridWidget::paintGrid(QPainter & painter)
-{
-	double cellSize = double(this->width()) / m_resolution;
-	for (double i = cellSize; i <= width(); i += cellSize)
-	{
-		painter.drawLine(0, i, height(), i);
-	}
-	for (double i = cellSize; i <= width(); i += cellSize)
-	{
-		painter.drawLine(i, 0, i, height());
-	}
-	//метод отрисовки фигур из контейнера фигур
-}
-
-void GridWidget::paintBorders(QPainter & painter)
-{
-	QRect borders(0, 0, width() - 1, height() - 1);
-	//QColor gridColor(Qt::black);
-	//painter.setPen(gridColor);
-	painter.drawRect(borders);
-}
-
-
 GridWidget::Figure::Figure(type t, QRect rect): figure_type(t), figure_rectangle(rect)
 {	
+}
 
+
+void GridWidget::binarize()
+{
+	if (m_resultingImage.size() != 0)
+	{
+		for (auto row : m_resultingImage)
+		{
+			row.clear();
+		}
+		m_resultingImage.clear();
+	}
+
+	QPixmap qPix = this->grab();
+	QImage image(qPix.toImage());
+	QColor color(image.pixel(300, 300));
+
+	double cellSize = double(this->width()) / m_resolution;
+	for (int i = 0; i < m_resolution; i++)
+	{
+		m_resultingImage.push_back(std::vector<int>());
+		for (int j = 0; j < m_resolution; j++)
+		{
+			QColor color(image.pixel(i*cellSize+(cellSize / 2), j*cellSize + (cellSize / 2)));
+			if (color == Qt::red)
+			{
+				m_resultingImage[i].push_back(1);
+			}
+			else 
+				m_resultingImage[i].push_back(0);
+		}
+	}
+	m_figures.clear();
+	std::ofstream myfile;
+	std::string fileName = std::to_string(m_resolution) + "x" + std::to_string(m_resolution) + ".txt";
+	myfile.open(fileName);
+	for (auto row : m_resultingImage)
+	{
+		for (auto column : row)
+		{
+			myfile << column;
+		}
+		myfile << '\n';
+	}
+	update();
 }
