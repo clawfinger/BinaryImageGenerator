@@ -35,8 +35,12 @@ public:
     QHBoxLayout *horizontalLayout;
     QPushButton *circleButton;
     QPushButton *squareButton;
+    QHBoxLayout *horizontalLayout_3;
+    QSpacerItem *horizontalSpacer;
     QSpinBox *spinBox;
     QSpacerItem *verticalSpacer;
+    QPushButton *colorButton;
+    QPushButton *resetButton;
     QPushButton *pushButton;
     QStatusBar *statusBar;
 
@@ -44,7 +48,12 @@ public:
     {
         if (MainWindowClass->objectName().isEmpty())
             MainWindowClass->setObjectName(QStringLiteral("MainWindowClass"));
-        MainWindowClass->resize(605, 401);
+        MainWindowClass->resize(603, 401);
+        QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(MainWindowClass->sizePolicy().hasHeightForWidth());
+        MainWindowClass->setSizePolicy(sizePolicy);
         centralWidget = new QWidget(MainWindowClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         centralWidget->setEnabled(true);
@@ -67,12 +76,19 @@ public:
         horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
         circleButton = new QPushButton(centralWidget);
         circleButton->setObjectName(QStringLiteral("circleButton"));
+        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(circleButton->sizePolicy().hasHeightForWidth());
+        circleButton->setSizePolicy(sizePolicy1);
         circleButton->setCheckable(true);
 
         horizontalLayout->addWidget(circleButton);
 
         squareButton = new QPushButton(centralWidget);
         squareButton->setObjectName(QStringLiteral("squareButton"));
+        sizePolicy1.setHeightForWidth(squareButton->sizePolicy().hasHeightForWidth());
+        squareButton->setSizePolicy(sizePolicy1);
         squareButton->setCheckable(true);
 
         horizontalLayout->addWidget(squareButton);
@@ -80,26 +96,47 @@ public:
 
         controlLayout->addLayout(horizontalLayout);
 
+        horizontalLayout_3 = new QHBoxLayout();
+        horizontalLayout_3->setSpacing(6);
+        horizontalLayout_3->setObjectName(QStringLiteral("horizontalLayout_3"));
+        horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        horizontalLayout_3->addItem(horizontalSpacer);
+
         spinBox = new QSpinBox(centralWidget);
         spinBox->setObjectName(QStringLiteral("spinBox"));
-        spinBox->setMinimum(5);
+        sizePolicy1.setHeightForWidth(spinBox->sizePolicy().hasHeightForWidth());
+        spinBox->setSizePolicy(sizePolicy1);
+        spinBox->setMinimum(10);
         spinBox->setMaximum(100);
         spinBox->setSingleStep(10);
-        spinBox->setValue(20);
+        spinBox->setValue(50);
 
-        controlLayout->addWidget(spinBox);
+        horizontalLayout_3->addWidget(spinBox);
+
+
+        controlLayout->addLayout(horizontalLayout_3);
 
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
         controlLayout->addItem(verticalSpacer);
 
+        colorButton = new QPushButton(centralWidget);
+        colorButton->setObjectName(QStringLiteral("colorButton"));
+
+        controlLayout->addWidget(colorButton);
+
+        resetButton = new QPushButton(centralWidget);
+        resetButton->setObjectName(QStringLiteral("resetButton"));
+        sizePolicy1.setHeightForWidth(resetButton->sizePolicy().hasHeightForWidth());
+        resetButton->setSizePolicy(sizePolicy1);
+
+        controlLayout->addWidget(resetButton);
+
         pushButton = new QPushButton(centralWidget);
         pushButton->setObjectName(QStringLiteral("pushButton"));
-        QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        sizePolicy.setHorizontalStretch(0);
-        sizePolicy.setVerticalStretch(0);
-        sizePolicy.setHeightForWidth(pushButton->sizePolicy().hasHeightForWidth());
-        pushButton->setSizePolicy(sizePolicy);
+        sizePolicy1.setHeightForWidth(pushButton->sizePolicy().hasHeightForWidth());
+        pushButton->setSizePolicy(sizePolicy1);
 
         controlLayout->addWidget(pushButton);
 
@@ -118,10 +155,12 @@ public:
 
     void retranslateUi(QMainWindow *MainWindowClass)
     {
-        MainWindowClass->setWindowTitle(QApplication::translate("MainWindowClass", "MainWindow", 0));
+        MainWindowClass->setWindowTitle(QApplication::translate("MainWindowClass", "Binary image generator", 0));
         circleButton->setText(QApplication::translate("MainWindowClass", "circle", 0));
         squareButton->setText(QApplication::translate("MainWindowClass", "square", 0));
-        pushButton->setText(QApplication::translate("MainWindowClass", "PushButton", 0));
+        colorButton->setText(QApplication::translate("MainWindowClass", "Pick color", 0));
+        resetButton->setText(QApplication::translate("MainWindowClass", "Reset", 0));
+        pushButton->setText(QApplication::translate("MainWindowClass", "Binarize", 0));
     } // retranslateUi
 
 };

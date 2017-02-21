@@ -4,11 +4,12 @@
 GridWidget::GridWidget(QWidget *parent)
 {
 	setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	m_resolution = 20;
+	m_resolution = 50;
 	m_isCircleButtonChecked = false;
 	m_isSquareButtonChecked = false;
 	setMouseTracking(true);
 	currentState = idle;
+
 }
 
 
@@ -64,7 +65,7 @@ void GridWidget::paintBorders(QPainter & painter)
 
 void GridWidget::paintSavedFigures(QPainter & painter)
 {
-	QColor gridColor(Qt::red);
+	QColor gridColor(m_figureColor);
 	painter.setPen(gridColor);
 	painter.setBrush(gridColor);
 	for (auto figure : m_figures)
@@ -79,7 +80,7 @@ void GridWidget::paintSavedFigures(QPainter & painter)
 
 void GridWidget::paintCurrentFigure(QPainter & p)
 {
-	QColor gridColor(Qt::red);
+	QColor gridColor(m_figureColor);
 	p.setPen(gridColor);
 	p.setBrush(gridColor);
 	if (m_isCircleButtonChecked)
@@ -98,18 +99,47 @@ void GridWidget::paintBinarizedFigures(QPainter & painter)
 
 		double cellWidth = (double)width() / m_resolution;
 		double cellHeight = (double)height() / m_resolution;
-		for (int i = 1; i <= m_resolution; i++) {
-			for (int j = 1; j <= m_resolution; j++) {
-				if (m_resultingImage[i-1][j-1] == 1) { // if there is any sense to paint it
-					qreal left = (qreal)(cellWidth*j - cellWidth); // margin from left
-					qreal top = (qreal)(cellHeight*i - cellHeight); // margin from top
+
+		for (int i = 1; i <= m_resolution; i++) 
+		{
+			for (int j = 1; j <= m_resolution; j++)
+			{
+				if (m_resultingImage[i-1][j-1] == 1) 
+				{ 
+					qreal left = (qreal)(cellWidth*j - cellWidth); 
+					qreal top = (qreal)(cellHeight*i - cellHeight); 
 					QRectF r(left, top, (qreal)cellWidth, (qreal)cellHeight);
-					painter.fillRect(r, QBrush(Qt::red)); // fill cell with brush of main color
+					painter.fillRect(r, QBrush(m_figureColor));
 				}
 			}
 		}
 	
 }
+
+void GridWidget::setColor(QColor figureColor)
+{
+	m_figureColor = figureColor;
+}
+
+
+void GridWidget::reset()
+{
+	currentState = idle;
+	m_figures.clear();
+	if (m_resultingImage.size() != 0)
+	{
+		for (auto row : m_resultingImage)
+		{
+			row.clear();
+		}
+		m_resultingImage.clear();
+	}
+	update();
+}
+
+
+
+
 
 void GridWidget::mouseMoveEvent(QMouseEvent *event)
 {
@@ -185,36 +215,44 @@ void GridWidget::binarize()
 		m_resultingImage.clear();
 	}
 
-	QPixmap qPix = this->grab();
-	QImage image(qPix.toImage());
-	QColor color(image.pixel(300, 300));
-
-	double cellSize = double(this->width()) / m_resolution;
-	for (int i = 0; i < m_resolution; i++)
-	{
-		m_resultingImage.push_back(std::vector<int>());
-		for (int j = 0; j < m_resolution; j++)
-		{
-			QColor color(image.pixel(i*cellSize+(cellSize / 2), j*cellSize + (cellSize / 2)));
-			if (color == Qt::red)
-			{
-				m_resultingImage[i].push_back(1);
-			}
-			else 
-				m_resultingImage[i].push_back(0);
-		}
-	}
-	m_figures.clear();
 	std::ofstream myfile;
-	std::string fileName = std::to_string(m_resolution) + "x" + std::to_string(m_resolution) + ".txt";
-	myfile.open(fileName);
-	for (auto row : m_resultingImage)
+	QString fileName = QFileDialog::getSaveFileName(this, "Select path to save the file",
+		QString("/home/" + QString::number(m_resolution) + "x" + QString::number(m_resolution)
+			+ ".txt"), "Text files (*.txt)");
+	if (!fileName.isEmpty())
 	{
-		for (auto column : row)
+		QPixmap qPix = this->grab();
+		m_figures.clear();
+		QImage image(qPix.toImage());
+
+		double cellSize = double(this->width()) / m_resolution;
+
+		for (int i = 0; i < m_resolution; i++)
 		{
-			myfile << column;
+			m_resultingImage.push_back(std::vector<int>());
+			for (int j = 0; j < m_resolution; j++)
+			{
+				double x = j*cellSize + (cellSize / 2);
+				double y = i*cellSize + (cellSize / 2);
+				QColor color(image.pixel(x, y));
+				if (color == m_figureColor)
+				{
+					m_resultingImage[i].push_back(1);
+				}
+				else
+					m_resultingImage[i].push_back(0);
+			}
 		}
-		myfile << '\n';
+		myfile.open(fileName.toUtf8().constData());
+		for (auto row : m_resultingImage)
+		{
+			for (auto column : row)
+			{
+				myfile << column;
+			}
+			myfile << '\n';
+		}
+
+		update();
 	}
-	update();
 }

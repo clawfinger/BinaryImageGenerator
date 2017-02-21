@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <vector>
 #include <QMouseEvent>
+#include <QFileDialog>
 
 #include <QDebug>
 #include <iostream>
@@ -18,11 +19,11 @@ public:
 	void paintEvent(QPaintEvent *);
 	void mouseMoveEvent(QMouseEvent *event);
 	void mousePressEvent(QMouseEvent * event);
+	void setColor(QColor figureColor);
 public slots:
 	void squareButtonChecked(bool);
 	void circleButtonChecked(bool);
 	void setGridResolution(int res);
-	void binarize();
 private:
 	struct Figure
 	{
@@ -34,7 +35,7 @@ private:
 	enum state{idle, drawingFigure};
 	state currentState;
 	std::vector<Figure> m_figures; //контейнер с фигурами на гриде
-
+	QColor m_figureColor;
 	int m_resolution;
 	std::vector<std::vector<int>> m_resultingImage;
 	bool m_isCircleButtonChecked;
@@ -50,5 +51,11 @@ private:
 	void paintSavedFigures(QPainter& painter);
 	void paintCurrentFigure(QPainter& painter);
 	void paintBinarizedFigures(QPainter& painter);
+
+	
+private slots:
+	void binarize();
+	void reset();
+
 
 };
